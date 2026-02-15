@@ -1,6 +1,6 @@
 "use client";
 
-import { Upload, FileText, Wallet } from "lucide-react";
+import { Upload, FileText, Wallet, Watch } from "lucide-react";
 
 interface UploadStepProps {
   date: string;
@@ -54,11 +54,11 @@ export function UploadStep({
             </h2>
 
             {/* Data source toggle */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <label className="font-mono text-xs text-neutral-500 uppercase tracking-wider">
                 Data Source
               </label>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => onToggleFilePath(true)}
                   className={`font-mono text-xs px-4 py-2 rounded-full flex items-center gap-2 transition-colors ${
@@ -81,12 +81,31 @@ export function UploadStep({
                   <Upload className="h-3.5 w-3.5" />
                   Upload XML
                 </button>
+                <button
+                  disabled
+                  className="font-mono text-xs px-4 py-2 rounded-full border border-neutral-800 text-neutral-600 flex items-center gap-2 cursor-not-allowed relative"
+                >
+                  <Watch className="h-3.5 w-3.5" />
+                  Apple Watch
+                  <span className="font-mono text-[9px] bg-neutral-800 text-neutral-500 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                    Soon
+                  </span>
+                </button>
               </div>
               {useFilePath && (
                 <p className="font-mono text-xs text-neutral-600">
                   Using server-side data/export.xml
                 </p>
               )}
+            </div>
+
+            {/* Apple Watch coming soon note */}
+            <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg px-4 py-3">
+              <p className="font-mono text-xs text-neutral-600 leading-relaxed">
+                <span className="text-neutral-400">Apple Watch app</span> — auto-sync
+                workout data directly from your wrist. Grant permission once
+                and your heart rate data flows automatically. No manual exports.
+              </p>
             </div>
 
             {/* File upload */}
@@ -171,7 +190,7 @@ export function UploadStep({
               <InfoItem
                 num="01"
                 title="Parse"
-                desc="Heart rate samples are extracted from your Apple Health XML export."
+                desc="Heart rate samples are extracted from your Apple Health export — or streamed directly from the Apple Watch app."
               />
               <InfoItem
                 num="02"

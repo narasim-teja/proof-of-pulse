@@ -27,15 +27,18 @@ export function HRTimelineChart({ data, avgHr }: HRTimelineChartProps) {
 
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <AreaChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+      <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
         <defs>
           <linearGradient id="hrGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-            <stop offset="50%" stopColor="#f59e0b" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="#ef4444" stopOpacity={0.05} />
+            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+            <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" />
+        <CartesianGrid
+          strokeDasharray="3 3"
+          stroke="rgba(255,255,255,0.06)"
+          vertical={false}
+        />
         <XAxis
           dataKey="time"
           tickFormatter={(t: string) =>
@@ -44,24 +47,28 @@ export function HRTimelineChart({ data, avgHr }: HRTimelineChartProps) {
               minute: "2-digit",
             })
           }
-          stroke="hsl(var(--muted-foreground))"
-          fontSize={11}
-          tickMargin={8}
+          stroke="rgba(255,255,255,0.1)"
+          tick={{ fill: "#a3a3a3", fontSize: 11, fontFamily: "var(--font-geist-mono)" }}
+          tickMargin={10}
+          axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
         />
         <YAxis
           domain={[yMin, yMax]}
-          stroke="hsl(var(--muted-foreground))"
-          fontSize={11}
-          tickMargin={4}
+          stroke="rgba(255,255,255,0.1)"
+          tick={{ fill: "#a3a3a3", fontSize: 11, fontFamily: "var(--font-geist-mono)" }}
+          tickMargin={8}
           tickFormatter={(v: number) => `${v}`}
+          axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
+          width={45}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: "hsl(var(--card))",
-            border: "1px solid hsl(var(--border))",
+            backgroundColor: "#171717",
+            border: "1px solid #262626",
             borderRadius: "8px",
-            color: "hsl(var(--foreground))",
-            fontSize: 13,
+            color: "#e5e5e5",
+            fontSize: 12,
+            fontFamily: "var(--font-geist-mono)",
           }}
           labelFormatter={(t) =>
             new Date(String(t)).toLocaleTimeString([], {
@@ -71,26 +78,29 @@ export function HRTimelineChart({ data, avgHr }: HRTimelineChartProps) {
             })
           }
           formatter={(value) => [`${value} bpm`, "Heart Rate"]}
+          cursor={{ stroke: "rgba(255,255,255,0.1)" }}
         />
         <ReferenceLine
           y={avgHr}
-          stroke="#6366f1"
+          stroke="#818cf8"
           strokeDasharray="5 5"
+          strokeOpacity={0.6}
           label={{
             value: `Avg ${avgHr}`,
             position: "right",
-            fill: "#6366f1",
+            fill: "#a5b4fc",
             fontSize: 11,
+            fontWeight: 500,
           }}
         />
         <Area
           type="monotone"
           dataKey="bpm"
-          stroke="#10b981"
+          stroke="#34d399"
           strokeWidth={2}
           fill="url(#hrGradient)"
           dot={false}
-          activeDot={{ r: 4, fill: "#10b981", stroke: "#064e3b" }}
+          activeDot={{ r: 4, fill: "#34d399", stroke: "#064e3b", strokeWidth: 2 }}
         />
       </AreaChart>
     </ResponsiveContainer>

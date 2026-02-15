@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Zap, Fingerprint } from "lucide-react";
+import { Zap, Fingerprint, Shield } from "lucide-react";
 import { ConfidenceRing } from "@/components/confidence-ring";
 import { ZoneDistribution } from "@/components/zone-distribution";
 import type { AnalyzeResponse } from "@/lib/types";
@@ -209,40 +209,67 @@ export function AnalysisStep({
         )}
 
         {/* Actions */}
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={onBack}
-            className="font-mono text-xs text-neutral-400 border border-neutral-800 px-5 py-2.5 rounded-full hover:border-neutral-600 hover:text-white transition-colors"
-          >
-            Back
-          </button>
-          <button
-            onClick={onSubmitToNear}
-            disabled={loading || asyncLoading}
-            className="font-mono text-sm bg-white text-black px-6 py-2.5 rounded-full hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? "Submitting to NEAR..." : "Submit to NEAR"}
-          </button>
-          <button
-            onClick={onRequestAsync}
-            disabled={loading || asyncLoading || !walletConnected}
-            title={
-              !walletConnected
-                ? "Connect wallet to use async flow"
-                : "Request async attestation via yield/resume"
-            }
-            className="font-mono text-xs text-neutral-400 border border-neutral-800 px-5 py-2.5 rounded-full hover:border-neutral-600 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {asyncLoading ? (
-              "Requesting..."
-            ) : (
-              <>
-                <Zap className="h-3.5 w-3.5" />
-                Async Attestation
-              </>
-            )}
-          </button>
+        <div className="font-mono text-xs text-neutral-500 uppercase tracking-wider mb-4">
+          Submit Proof
         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          {/* Submit to NEAR — direct */}
+          <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 flex flex-col gap-3">
+            <div className="flex items-center gap-2 text-neutral-300 font-mono text-xs font-semibold">
+              <Shield className="h-3.5 w-3.5" />
+              Direct Attestation
+            </div>
+            <p className="font-mono text-xs text-neutral-600 leading-relaxed flex-1">
+              The TEE oracle analyzes your data, encrypts it into NOVA, and
+              submits the proof directly to the NEAR contract.
+            </p>
+            <button
+              onClick={onSubmitToNear}
+              disabled={loading || asyncLoading}
+              className="w-full font-mono text-sm bg-white text-black px-5 py-2.5 rounded-full hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? "Submitting..." : "Submit to NEAR"}
+            </button>
+          </div>
+
+          {/* Async Attestation — yield/resume */}
+          <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 flex flex-col gap-3">
+            <div className="flex items-center gap-2 text-neutral-300 font-mono text-xs font-semibold">
+              <Zap className="h-3.5 w-3.5" />
+              Async Attestation
+            </div>
+            <p className="font-mono text-xs text-neutral-600 leading-relaxed flex-1">
+              Your wallet submits a request on-chain using NEAR&apos;s yield/resume.
+              The oracle picks it up and fulfills it asynchronously.
+              {!walletConnected && (
+                <span className="text-amber-500 block mt-1">
+                  Requires wallet connection.
+                </span>
+              )}
+            </p>
+            <button
+              onClick={onRequestAsync}
+              disabled={loading || asyncLoading || !walletConnected}
+              className="w-full font-mono text-xs text-neutral-400 border border-neutral-800 px-5 py-2.5 rounded-full hover:border-neutral-600 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {asyncLoading ? (
+                "Requesting..."
+              ) : (
+                <>
+                  <Zap className="h-3.5 w-3.5" />
+                  Request Async
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <button
+          onClick={onBack}
+          className="font-mono text-xs text-neutral-400 border border-neutral-800 px-5 py-2.5 rounded-full hover:border-neutral-600 hover:text-white transition-colors"
+        >
+          Back
+        </button>
       </div>
     </section>
   );
