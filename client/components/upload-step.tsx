@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, Upload, FileText } from "lucide-react";
+import { Heart, Upload, FileText, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,11 +17,13 @@ interface UploadStepProps {
   useFilePath: boolean;
   loading: boolean;
   error: string | null;
+  walletConnected: boolean;
   onDateChange: (date: string) => void;
   onUserIdChange: (id: string) => void;
   onToggleFilePath: (use: boolean) => void;
   onFileRead: (content: string) => void;
   onAnalyze: () => void;
+  onConnectWallet: () => void;
 }
 
 export function UploadStep({
@@ -30,11 +32,13 @@ export function UploadStep({
   useFilePath,
   loading,
   error,
+  walletConnected,
   onDateChange,
   onUserIdChange,
   onToggleFilePath,
   onFileRead,
   onAnalyze,
+  onConnectWallet,
 }: UploadStepProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -120,12 +124,32 @@ export function UploadStep({
           {/* User ID */}
           <div className="space-y-2">
             <label className="text-sm font-medium">NEAR Account ID</label>
-            <Input
-              type="text"
-              value={userId}
-              onChange={(e) => onUserIdChange(e.target.value)}
-              placeholder="your-account.testnet"
-            />
+            {walletConnected ? (
+              <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-md px-3 py-2">
+                <Wallet className="h-4 w-4 text-emerald-500 shrink-0" />
+                <span className="text-sm font-mono text-emerald-400 truncate">
+                  {userId}
+                </span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Input
+                  type="text"
+                  value={userId}
+                  onChange={(e) => onUserIdChange(e.target.value)}
+                  placeholder="your-account.testnet"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={onConnectWallet}
+                >
+                  <Wallet className="mr-2 h-4 w-4" />
+                  Connect Wallet Instead
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Error */}

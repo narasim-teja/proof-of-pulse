@@ -1,14 +1,37 @@
 "use client";
 
+import { useEffect } from "react";
+import { useWalletSelector } from "@near-wallet-selector/react-hook";
 import { useAttestationFlow } from "@/hooks/use-attestation-flow";
 import { StepIndicator } from "@/components/step-indicator";
 import { UploadStep } from "@/components/upload-step";
 import { AnalysisStep } from "@/components/analysis-step";
 import { AttestationStep } from "@/components/attestation-step";
 import { VaultStep } from "@/components/vault-step";
+import { Button } from "@/components/ui/button";
+import { Wallet, LogOut } from "lucide-react";
 
 export function ProofWizard() {
   const flow = useAttestationFlow();
+  const { signIn, signOut, signedAccountId } = useWalletSelector();
+
+  const connectedAccount = signedAccountId;
+
+  // Auto-fill userId when wallet connects
+  useEffect(() => {
+    if (connectedAccount) {
+      flow.setField("userId", connectedAccount);
+    }
+  }, [connectedAccount]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleConnect = () => {
+    signIn();
+  };
+
+  const handleDisconnect = async () => {
+    await signOut();
+    flow.setField("userId", "test-user.testnet");
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -23,6 +46,28 @@ export function ProofWizard() {
               NEAR Testnet
             </span>
           </div>
+
+          {/* Wallet connection */}
+          {connectedAccount ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-emerald-400 font-mono hidden sm:inline">
+                {connectedAccount}
+              </span>
+              <span className="text-sm text-emerald-400 font-mono sm:hidden">
+                {connectedAccount.length > 16
+                  ? `${connectedAccount.slice(0, 8)}...${connectedAccount.slice(-8)}`
+                  : connectedAccount}
+              </span>
+              <Button variant="ghost" size="sm" onClick={handleDisconnect}>
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <Button variant="outline" size="sm" onClick={handleConnect}>
+              <Wallet className="mr-2 h-4 w-4" />
+              Connect Wallet
+            </Button>
+          )}
         </div>
       </header>
 
@@ -38,6 +83,7 @@ export function ProofWizard() {
             useFilePath={flow.useFilePath}
             loading={flow.loading}
             error={flow.error}
+            walletConnected={!!connectedAccount}
             onDateChange={(v) => flow.setField("date", v)}
             onUserIdChange={(v) => flow.setField("userId", v)}
             onToggleFilePath={(v) => flow.setField("useFilePath", v)}
@@ -46,6 +92,7 @@ export function ProofWizard() {
               flow.setField("useFilePath", false);
             }}
             onAnalyze={flow.analyze}
+            onConnectWallet={handleConnect}
           />
         )}
 
@@ -72,9 +119,7 @@ export function ProofWizard() {
         {flow.step === "vault" && (
           <VaultStep
             data={flow.vaultResult}
-            novaVaultId={
-              flow.attestResult?.nova_vault_id || "unknown"
-            }
+            novaVaultId={flow.attestResult?.nova_vault_id || "unknown"}
             loading={flow.loading}
             error={flow.error}
             onFetchVault={flow.fetchVault}
