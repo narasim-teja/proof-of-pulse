@@ -110,6 +110,56 @@ export class ProofOfPulse {
     return this.oracle_id;
   }
 
+  // ── Named account oracle management ──
+
+  @call({ payableFunction: false })
+  add_oracle({
+    oracle_id,
+    version,
+  }: {
+    oracle_id: string;
+    version: string;
+  }): void {
+    assert(
+      near.predecessorAccountId() === this.owner_id,
+      "Only owner can add oracles"
+    );
+    this.oracles.set(oracle_id, version);
+    const ids: string[] = JSON.parse(this.oracle_ids);
+    if (!ids.includes(oracle_id)) {
+      ids.push(oracle_id);
+      this.oracle_ids = JSON.stringify(ids);
+    }
+    near.log(`Oracle added: ${oracle_id} (${version})`);
+  }
+
+  @call({ payableFunction: false })
+  remove_oracle({ oracle_id }: { oracle_id: string }): void {
+    assert(
+      near.predecessorAccountId() === this.owner_id,
+      "Only owner can remove oracles"
+    );
+    assert(oracle_id !== this.oracle_id, "Cannot remove primary oracle");
+    this.oracles.set(oracle_id, null!);
+    const ids: string[] = JSON.parse(this.oracle_ids);
+    this.oracle_ids = JSON.stringify(ids.filter((id) => id !== oracle_id));
+    near.log(`Oracle removed: ${oracle_id}`);
+  }
+
+  @view({})
+  get_oracles(): object[] {
+    const ids: string[] = JSON.parse(this.oracle_ids);
+    return ids.map((id) => ({
+      oracle_id: id,
+      version: this.oracles.get(id) || "unknown",
+    }));
+  }
+
+  @view({})
+  is_authorized_oracle({ account_id }: { account_id: string }): boolean {
+    return account_id === this.oracle_id || this.oracles.get(account_id) !== null;
+  }
+
   // ── Async attestation flow (event-based yield/resume alternative) ──
 
   @call({ payableFunction: false })

@@ -4,6 +4,7 @@ import test from "ava";
 let worker: Worker;
 let contract: Account;
 let oracle: Account;
+let oracle2: Account;
 let user: Account;
 
 test.before(async () => {
@@ -11,6 +12,7 @@ test.before(async () => {
   const root = worker.rootAccount;
   contract = await root.createSubAccount("contract");
   oracle = await root.createSubAccount("oracle");
+  oracle2 = await root.createSubAccount("oracle2");
   user = await root.createSubAccount("user");
 
   await contract.deploy("./build/proof_of_pulse.wasm");
@@ -191,6 +193,81 @@ test.serial("only oracle can fulfill", async (t) => {
       recovery_score: 50,
       confidence: 70,
       data_hash: "unauthorized_test",
+      nova_vault_id: "",
+    })
+  );
+});
+
+// ── Multi-oracle (named accounts) tests ──
+
+test.serial("owner can add and list oracles", async (t) => {
+  // Contract account is the owner (it called init)
+  await contract.call(contract, "add_oracle", {
+    oracle_id: oracle2.accountId,
+    version: "v2-tee",
+  });
+
+  const oracles = (await contract.view("get_oracles", {})) as any[];
+  const ids = oracles.map((o: any) => o.oracle_id);
+  t.true(ids.includes(oracle.accountId));
+  t.true(ids.includes(oracle2.accountId));
+
+  const o2 = oracles.find((o: any) => o.oracle_id === oracle2.accountId);
+  t.is(o2.version, "v2-tee");
+});
+
+test.serial("second oracle can submit attestations", async (t) => {
+  const key = await oracle2.call(contract, "submit_attestation", {
+    user_id: user.accountId,
+    activity_type: "moderate_cardio",
+    duration_mins: 15,
+    avg_hr: 125,
+    max_hr: 150,
+    min_hr: 88,
+    hr_zone_distribution: "{}",
+    recovery_score: 65,
+    confidence: 88,
+    data_hash: "oracle2_hash",
+    nova_vault_id: "",
+  });
+
+  const attestation = await contract.view("get_attestation", { key });
+  const att = JSON.parse(attestation as string);
+  t.is(att.confidence, 88);
+  t.is(att.oracle_version, "v2-tee");
+});
+
+test.serial("non-owner cannot add oracles", async (t) => {
+  await t.throwsAsync(
+    user.call(contract, "add_oracle", {
+      oracle_id: "rogue.testnet",
+      version: "evil",
+    })
+  );
+});
+
+test.serial("owner can remove oracle", async (t) => {
+  await contract.call(contract, "remove_oracle", {
+    oracle_id: oracle2.accountId,
+  });
+
+  const oracles = (await contract.view("get_oracles", {})) as any[];
+  const ids = oracles.map((o: any) => o.oracle_id);
+  t.false(ids.includes(oracle2.accountId));
+
+  // Removed oracle can no longer submit
+  await t.throwsAsync(
+    oracle2.call(contract, "submit_attestation", {
+      user_id: user.accountId,
+      activity_type: "cardio",
+      duration_mins: 10,
+      avg_hr: 120,
+      max_hr: 140,
+      min_hr: 80,
+      hr_zone_distribution: "{}",
+      recovery_score: 50,
+      confidence: 70,
+      data_hash: "removed_oracle_hash",
       nova_vault_id: "",
     })
   );
