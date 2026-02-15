@@ -38,7 +38,7 @@ Apple Watch HR Data ──→ Shade Agent (TEE) ──→ NEAR Smart Contract
 | Component | URL |
 |-----------|-----|
 | Frontend | *Deployed via Vercel* |
-| Shade Agent (TEE) | `https://46198e92a8656bdd9690c82254b9d0414c91a1be-3000.dstack-pha-prod5.phala.network` |
+| Shade Agent (TEE) | `https://3de4333f25399e694ca01dcd135825276c0670e4-3000.dstack-pha-prod5.phala.network` |
 | NEAR Contract | [`proof-of-pulse.testnet`](https://testnet.nearblocks.io/address/proof-of-pulse.testnet) |
 | NOVA Vault | `narasimteja.nova-sdk.near` (mainnet) |
 
@@ -102,7 +102,7 @@ proof-of-pulse/
 
 ## Smart Contract
 
-**Deployed:** [`proof-of-pulse.testnet`](https://testnet.nearblocks.io/address/proof-of-pulse.testnet)
+**Deployed:** [`proof-of-pulse.testnet`](https://3de4333f25399e694ca01dcd135825276c0670e4-3000.dstack-pha-prod5.phala.network)
 
 | Method | Type | Description |
 |--------|------|-------------|
@@ -153,7 +153,7 @@ Proof of Pulse leverages five NEAR-native primitives that make this project impo
 
 Our oracle runs inside a **Trusted Execution Environment** via the Shade Agent Framework, deployed on Phala Cloud. The Docker image SHA256 hash is attested on-chain — proving the exact code that analyzed your heart rate data is the code that was audited. Nobody, not even us, can deploy a tampered oracle. Any instance running the same code gets the same signing keys through NEAR's Chain Signatures.
 
-**Live TEE endpoint:** [`https://46198e92...phala.network`](https://46198e92a8656bdd9690c82254b9d0414c91a1be-3000.dstack-pha-prod5.phala.network)
+**Live TEE endpoint:** [`https://46198e92...phala.network`](https://3de4333f25399e694ca01dcd135825276c0670e4-3000.dstack-pha-prod5.phala.network)
 
 ### 2. Async Attestation (Request/Fulfill Pattern)
 
@@ -176,26 +176,35 @@ The account name IS the identity. No ABI decoding, no hex address lookups. Users
 
 The attestation contract is shared state — a public good. Any dApp on NEAR verifies attestations with a single cross-contract call. Our `mock-sweatcoin.testnet` consumer demonstrates this: it only distributes rewards when biometric confidence exceeds 80%, verified via cross-contract call to `proof-of-pulse.testnet`.
 
-### 5. NOVA Privacy Vaults (Mainnet)
+### 5. NOVA Privacy Vaults — Encrypted Storage + Data Marketplace (Mainnet)
 
-Raw biometric data is encrypted client-side with **AES-256-GCM** and stored in NOVA vaults on IPFS via NEAR mainnet. Only the attestation proof and a `nova_vault_id` reference live on-chain (testnet). Users control access through grant/revoke — revoking triggers automatic key rotation so previously authorized parties lose access.
+NOVA isn't just storage — it's a **full data sharing layer** with access control, built end-to-end in the UI.
+
+**Three capabilities, all wired up:**
+
+| Capability | What Happens | API |
+|------------|-------------|-----|
+| **Encrypted Storage** | Raw HR samples → AES-256-GCM encrypted → uploaded to IPFS via NOVA | Automatic after attestation |
+| **Grant Access** | User types a NEAR account (e.g. `researcher.testnet`), clicks Grant → that account can decrypt vault data | `POST /api/vault/grant` → `sdk.addGroupMember()` |
+| **Revoke Access** | User clicks Revoke → account loses access, **automatic key rotation** so revoked parties can't decrypt even cached data | `POST /api/vault/revoke` → `sdk.revokeGroupMember()` |
+
+The final step of the attestation flow is a **Vault Management UI** showing:
+- Vault status panel (owner, file count, authorization status, stored files with IPFS hashes)
+- Data Sharing panel with grant/revoke controls for any NEAR account
+
+This means a researcher, fitness app, or insurance agent can request access to a user's raw biometric data — and the user controls exactly who sees it, can revoke at any time, and revocation is cryptographically enforced via key rotation.
 
 **Data flow:**
 ```
 80MB Apple Health XML
   → parsed to ~20KB workout HR samples
-  → encrypted (AES-256-GCM) + uploaded to NOVA
+  → AES-256-GCM encrypted + uploaded to NOVA (IPFS)
   → IPFS CID + SHA-256 hash returned
   → nova_vault_id recorded on-chain alongside attestation
+  → User grants/revokes access to specific NEAR accounts
 ```
 
 **Network split:** Attestation contract runs on NEAR testnet. NOVA vaults run on NEAR mainnet. This works because `nova_vault_id` is stored as a plain string reference — no cross-network contract calls needed.
-
-| NOVA Endpoint | Description |
-|---------------|-------------|
-| `GET /api/vault/:groupId` | Query vault status, owner, files, authorization |
-| `POST /api/vault/grant` | Grant an account access to encrypted data |
-| `POST /api/vault/revoke` | Revoke access (triggers key rotation) |
 
 ---
 
@@ -241,12 +250,12 @@ NOVA_INTEGRATION_TEST=1 npm test
 
 ## Use Cases
 
-**Move-to-Earn Verification** — Sweatcoin, STEPN, and similar apps on NEAR can gate token rewards on biometric proof instead of easily-spoofed step counts.
+**Move-to-Earn Verification** — Sweatcoin, STEPN, and similar apps on NEAR gate token rewards on biometric proof instead of easily-spoofed step counts. The consumer contract pattern (`mock-sweatcoin.testnet`) shows this working end-to-end with a single cross-contract call.
 
-**Health Insurance Compliance** — Insurers verify exercise requirements without accessing raw health data. On-chain attestation = summary. NOVA vault = detailed data (paid access, user-controlled).
+**Health Data Marketplace** — Users own and monetize their biometric data. After attestation, users can grant access to specific NEAR accounts (researchers, fitness apps, insurers) directly from the vault UI. Revoke anytime — key rotation ensures revoked parties lose access cryptographically. The on-chain attestation is the proof; the NOVA vault is the data. Both are user-controlled.
 
-**Research Data Marketplace** — Users monetize their biometric data. Researchers pay for access to encrypted workout data via NOVA vaults. The user controls who sees what and gets paid for it.
+**Insurance Compliance** — Insurers verify exercise requirements without accessing raw health data. They read the on-chain attestation (free, public). For detailed data, they request vault access — the user decides whether to grant it.
 
 ---
 
-*Built with real workout data. The heart rate curve in the demo (93 → 177 bpm) is from an actual treadmill session.*
+*Built with real workout data. The heart rate curve in the demo (93 → 177 bpm) is from an actual treadmill session on Feb 14, 2026.*

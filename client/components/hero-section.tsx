@@ -43,7 +43,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
             Get Started
           </button>
           <a
-            href="https://github.com"
+            href="https://github.com/narasim-teja/proof-of-pulse"
             target="_blank"
             rel="noopener noreferrer"
             className="font-mono text-sm border border-neutral-700 text-neutral-300 px-6 py-2.5 rounded-full hover:border-neutral-500 hover:text-white transition-colors"
