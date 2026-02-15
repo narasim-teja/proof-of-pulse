@@ -109,3 +109,11 @@ bun --hot ./index.ts
 ```
 
 For more information, read the Bun API docs in `node_modules/bun-types/docs/**.mdx`.
+
+## Contracts
+
+The `contract/` folder uses **pnpm** (not Bun) because `near-sdk-js` enforces pnpm via its preinstall script and its build toolchain (qjsc, wasi-sdk, binaryen) requires pnpm postinstall hooks.
+
+- Use `pnpm install` inside `contract/`
+- Use `pnpm run build` to compile the contract to WASM
+- Use `pnpm run test` to run contract integration tests (ava + near-workspaces)

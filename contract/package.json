@@ -1,0 +1,28 @@
+{
+  "name": "proof-of-pulse-contract",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "near-sdk-js build src/index.ts build/proof_of_pulse.wasm",
+    "test": "ava test/contract.test.ts"
+  },
+  "dependencies": {
+    "near-sdk-js": "^2.0.0"
+  },
+  "devDependencies": {
+    "ava": "^6.1.0",
+    "near-workspaces": "^4.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "ava": {
+    "timeout": "60s",
+    "extensions": {
+      "ts": "module"
+    },
+    "nodeArguments": [
+      "--experimental-strip-types",
+      "--no-warnings"
+    ]
+  }
+}
