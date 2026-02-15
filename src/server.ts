@@ -54,6 +54,11 @@ const server = Bun.serve({
           }
 
           const attestation = analyzeWorkout(session);
+          const step = Math.max(1, Math.floor(session.samples.length / 150));
+          const hr_timeline = session.samples
+            .filter((_, i) => i % step === 0)
+            .map((s) => ({ time: s.timestamp.toISOString(), bpm: Math.round(s.bpm) }));
+
           return corsJson({
             attestation,
             session_info: {
@@ -62,6 +67,7 @@ const server = Bun.serve({
               sample_count: session.samples.length,
               duration_mins: session.durationMins,
             },
+            hr_timeline,
           });
         } catch (err: any) {
           return corsJson({ error: err.message }, 500);
@@ -94,6 +100,10 @@ const server = Bun.serve({
           }
 
           const attestation = analyzeWorkout(session);
+          const step = Math.max(1, Math.floor(session.samples.length / 150));
+          const hr_timeline = session.samples
+            .filter((_, i) => i % step === 0)
+            .map((s) => ({ time: s.timestamp.toISOString(), bpm: Math.round(s.bpm) }));
 
           // Store raw HR data in NOVA Privacy Vault
           let novaResult: NovaVaultResult | null = null;
@@ -112,6 +122,7 @@ const server = Bun.serve({
 
           return corsJson({
             attestation,
+            hr_timeline,
             near_tx: txHash,
             attestation_key: key,
             nova_vault_id: novaVaultId,
