@@ -1,19 +1,24 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useWalletSelector } from "@near-wallet-selector/react-hook";
 import { useAttestationFlow } from "@/hooks/use-attestation-flow";
 import { StepIndicator } from "@/components/step-indicator";
 import { UploadStep } from "@/components/upload-step";
 import { AnalysisStep } from "@/components/analysis-step";
 import { AttestationStep } from "@/components/attestation-step";
+import { AsyncPending } from "@/components/async-pending";
 import { VaultStep } from "@/components/vault-step";
 import { Button } from "@/components/ui/button";
 import { Wallet, LogOut } from "lucide-react";
 
+const CONTRACT_ID = "proof-of-pulse.testnet";
+
 export function ProofWizard() {
   const flow = useAttestationFlow();
-  const { signIn, signOut, signedAccountId } = useWalletSelector();
+  const { signIn, signOut, signedAccountId, callFunction } =
+    useWalletSelector();
+  const [asyncLoading, setAsyncLoading] = useState(false);
 
   const connectedAccount = signedAccountId;
 
@@ -32,6 +37,38 @@ export function ProofWizard() {
     await signOut();
     flow.setField("userId", "test-user.testnet");
   };
+
+  const handleRequestAsync = useCallback(async () => {
+    if (!flow.analysisResult) return;
+    setAsyncLoading(true);
+    flow.setField("error", null);
+    try {
+      const result = await callFunction({
+        contractId: CONTRACT_ID,
+        methodName: "request_attestation",
+        args: { data_hash: flow.analysisResult.attestation.data_hash },
+        gas: "30000000000000",
+        deposit: "0",
+      });
+      const requestId =
+        typeof result === "string" ? result : JSON.stringify(result);
+      flow.setField("asyncRequestId", requestId);
+      flow.goToStep("attestation");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Async request failed";
+      flow.setField("error", message);
+    }
+    setAsyncLoading(false);
+  }, [flow.analysisResult, callFunction]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleAsyncFulfilled = useCallback(() => {
+    // Oracle fulfilled the request — reload by re-attesting through normal flow
+    // For simplicity, just reset the async state and let user submit normally
+    // In a production app, we'd fetch the attestation by key
+    flow.setField("asyncRequestId", null);
+    flow.attest();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -102,9 +139,22 @@ export function ProofWizard() {
             loading={flow.loading}
             error={flow.error}
             onSubmitToNear={flow.attest}
+            onRequestAsync={handleRequestAsync}
             onBack={() => flow.goToStep("upload")}
+            walletConnected={!!connectedAccount}
+            asyncLoading={asyncLoading}
           />
         )}
+
+        {flow.step === "attestation" &&
+          flow.asyncRequestId &&
+          !flow.attestResult && (
+            <AsyncPending
+              requestId={flow.asyncRequestId}
+              onFulfilled={handleAsyncFulfilled}
+              onReset={flow.reset}
+            />
+          )}
 
         {flow.step === "attestation" && flow.attestResult && (
           <AttestationStep
@@ -113,6 +163,7 @@ export function ProofWizard() {
               flow.fetchVault(flow.attestResult!.nova_vault_id)
             }
             onReset={flow.reset}
+            walletConnected={!!connectedAccount}
           />
         )}
 

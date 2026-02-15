@@ -1,4 +1,4 @@
-import type { AnalyzeResponse, AttestResponse, VaultResponse } from "./types";
+import type { AnalyzeResponse, AttestResponse, VaultResponse, AgentInfo, OracleEntry } from "./types";
 
 export async function analyzeWorkout(params: {
   date: string;
@@ -67,5 +67,26 @@ export async function revokeVaultAccess(
     body: JSON.stringify({ group_id: groupId, member_id: memberId }),
   });
   if (!res.ok) throw new Error("Revoke failed");
+  return res.json();
+}
+
+export async function getAgentInfo(): Promise<AgentInfo> {
+  const res = await fetch("/api/agent-info");
+  if (!res.ok) throw new Error("Failed to fetch agent info");
+  return res.json();
+}
+
+export async function getOracles(): Promise<OracleEntry[]> {
+  const res = await fetch("/api/oracles");
+  if (!res.ok) throw new Error("Failed to fetch oracles");
+  const data = await res.json();
+  return data.oracles ?? [];
+}
+
+export async function getRequestStatus(
+  requestId: string
+): Promise<{ status: string } | null> {
+  const res = await fetch(`/api/request-status/${encodeURIComponent(requestId)}`);
+  if (!res.ok) throw new Error("Failed to fetch request status");
   return res.json();
 }

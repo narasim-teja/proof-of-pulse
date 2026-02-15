@@ -15,6 +15,7 @@ interface FlowState {
   analysisResult: AnalyzeResponse | null;
   attestResult: AttestResponse | null;
   vaultResult: VaultResponse | null;
+  asyncRequestId: string | null;
   loading: boolean;
   error: string | null;
 }
@@ -28,6 +29,7 @@ const initialState: FlowState = {
   analysisResult: null,
   attestResult: null,
   vaultResult: null,
+  asyncRequestId: null,
   loading: false,
   error: null,
 };

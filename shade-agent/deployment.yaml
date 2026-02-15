@@ -12,9 +12,9 @@ agent_contract:
   # ac-proxy for local, ac-sandbox for Phala Cloud
   contract_id: ac-sandbox.pop-oracle.testnet
 
-  # Deploy the standard shade agent contract from global hash
+  # Contract already deployed at ac-sandbox.pop-oracle.testnet — skip re-deploy
   deploy_custom:
-    enabled: true
+    enabled: false
     funding_amount: 4
     delete_key: false
 

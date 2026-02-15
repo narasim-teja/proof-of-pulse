@@ -20,7 +20,7 @@ services:
       ORACLE_ACCOUNT_ID: ${ORACLE_ACCOUNT_ID}
       ORACLE_PRIVATE_KEY: ${ORACLE_PRIVATE_KEY}
     platform: linux/amd64
-    image: narasimteja/proof-of-pulse-agent@sha256:860ae5ffbfe23196c0f4704f2cc651e3f73315292c324e6f5003ee62929895c6
+    image: narasimteja/proof-of-pulse-agent@sha256:4efa58b1c38c8e4584d34e553df451c2a3be9d0e55e85d1bd0d14efb494ecde3
     container_name: shade-agent-app
     ports:
       - 3000:3000

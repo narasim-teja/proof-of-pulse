@@ -1,6 +1,19 @@
 "use client";
 
-import { CheckCircle2, ExternalLink, Copy, Shield } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { useWalletSelector } from "@near-wallet-selector/react-hook";
+import {
+  CheckCircle2,
+  ExternalLink,
+  Copy,
+  Shield,
+  ShieldCheck,
+  ChevronDown,
+  ChevronUp,
+  Coins,
+  Loader2,
+  XCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,22 +24,64 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import type { AttestResponse } from "@/lib/types";
+import type { AttestResponse, AgentInfo, OracleEntry } from "@/lib/types";
+import * as api from "@/lib/api";
+
+const CONSUMER_CONTRACT_ID = "mock-sweatcoin.testnet";
 
 interface AttestationStepProps {
   data: AttestResponse;
   onViewVault: () => void;
   onReset: () => void;
+  walletConnected: boolean;
 }
 
 export function AttestationStep({
   data,
   onViewVault,
   onReset,
+  walletConnected,
 }: AttestationStepProps) {
+  const { callFunction } = useWalletSelector();
+  const [agentInfo, setAgentInfo] = useState<AgentInfo | null>(null);
+  const [oracles, setOracles] = useState<OracleEntry[]>([]);
+  const [oracleOpen, setOracleOpen] = useState(false);
+  const [claimState, setClaimState] = useState<
+    "idle" | "loading" | "success" | "rejected" | "error"
+  >("idle");
+  const [claimError, setClaimError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.getAgentInfo().then(setAgentInfo).catch(() => {});
+    api.getOracles().then(setOracles).catch(() => {});
+  }, []);
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
   };
+
+  const handleClaimReward = useCallback(async () => {
+    setClaimState("loading");
+    setClaimError(null);
+    try {
+      await callFunction({
+        contractId: CONSUMER_CONTRACT_ID,
+        methodName: "claim_reward",
+        args: { attestation_key: data.attestation_key },
+        gas: "60000000000000",
+        deposit: "0",
+      });
+      setClaimState("success");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Claim failed";
+      if (message.includes("rejected") || message.includes("Confidence")) {
+        setClaimState("rejected");
+      } else {
+        setClaimState("error");
+      }
+      setClaimError(message);
+    }
+  }, [callFunction, data.attestation_key]);
 
   return (
     <div className="flex justify-center px-4">
@@ -99,6 +154,10 @@ export function AttestationStep({
             <Badge variant="secondary">
               {data.attestation.duration_mins} min
             </Badge>
+            <Badge variant="outline" className="text-cyan-400 border-cyan-400/30">
+              <ShieldCheck className="mr-1 h-3 w-3" />
+              TEE Verified
+            </Badge>
           </div>
 
           <Separator />
@@ -136,6 +195,145 @@ export function AttestationStep({
                     </Badge>
                   )}
                 </>
+              )}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Oracle Info (collapsible) */}
+          <div className="space-y-2">
+            <button
+              className="flex items-center gap-1 text-xs text-muted-foreground font-medium hover:text-foreground transition-colors w-full"
+              onClick={() => setOracleOpen((o) => !o)}
+            >
+              <ShieldCheck className="h-3 w-3 text-cyan-400" />
+              Oracle Info
+              {oracleOpen ? (
+                <ChevronUp className="h-3 w-3 ml-auto" />
+              ) : (
+                <ChevronDown className="h-3 w-3 ml-auto" />
+              )}
+            </button>
+            {oracleOpen && (
+              <div className="bg-muted rounded-lg px-3 py-2 space-y-2 text-sm">
+                {agentInfo && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Oracle</span>
+                      <span>
+                        {agentInfo.name}{" "}
+                        <Badge variant="outline" className="text-xs ml-1">
+                          v{agentInfo.version}
+                        </Badge>
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Runtime</span>
+                      <span className="font-mono text-xs">shade-agent-tee</span>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-muted-foreground text-xs">
+                        Capabilities
+                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {agentInfo.capabilities.map((c) => (
+                          <Badge
+                            key={c}
+                            variant="secondary"
+                            className="text-xs"
+                          >
+                            {c.replace(/_/g, " ")}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+                {oracles.length > 0 && (
+                  <div className="space-y-1 pt-1">
+                    <span className="text-muted-foreground text-xs">
+                      Authorized Oracles
+                    </span>
+                    {oracles.map((o) => (
+                      <div
+                        key={o.oracle_id}
+                        className="flex justify-between text-xs"
+                      >
+                        <span className="font-mono truncate max-w-[200px]">
+                          {o.oracle_id}
+                        </span>
+                        <Badge variant="outline" className="text-xs">
+                          v{o.version}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Claim SWEAT Reward */}
+          <div className="space-y-2">
+            <label className="text-xs text-muted-foreground font-medium">
+              Cross-Contract Composability
+            </label>
+            <div className="bg-muted rounded-lg px-3 py-3 space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Any dApp on NEAR can verify your attestation. Try claiming a mock
+                Sweatcoin reward (requires confidence {">="} 80).
+              </p>
+              {claimState === "idle" && (
+                <Button
+                  size="sm"
+                  className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                  onClick={handleClaimReward}
+                  disabled={!walletConnected}
+                >
+                  <Coins className="mr-2 h-4 w-4" />
+                  {walletConnected
+                    ? "Claim 10 SWEAT"
+                    : "Connect Wallet to Claim"}
+                </Button>
+              )}
+              {claimState === "loading" && (
+                <Button size="sm" className="w-full" disabled>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Claiming...
+                </Button>
+              )}
+              {claimState === "success" && (
+                <div className="flex items-center gap-2 text-sm text-emerald-400">
+                  <CheckCircle2 className="h-4 w-4" />
+                  10 SWEAT rewarded! Cross-contract verification passed.
+                </div>
+              )}
+              {claimState === "rejected" && (
+                <div className="flex items-center gap-2 text-sm text-amber-400">
+                  <XCircle className="h-4 w-4" />
+                  Reward rejected: confidence below 80%
+                </div>
+              )}
+              {claimState === "error" && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm text-destructive">
+                    <XCircle className="h-4 w-4" />
+                    Claim failed
+                  </div>
+                  {claimError && (
+                    <p className="text-xs text-muted-foreground">{claimError}</p>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setClaimState("idle")}
+                  >
+                    Try Again
+                  </Button>
+                </div>
               )}
             </div>
           </div>

@@ -62,6 +62,19 @@ export interface AttestResponse {
   explorer_url: string;
 }
 
+export interface AgentInfo {
+  name: string;
+  version: string;
+  description: string;
+  capabilities: string[];
+  contract: string;
+}
+
+export interface OracleEntry {
+  oracle_id: string;
+  version: string;
+}
+
 export interface VaultFile {
   fileHash: string;
   ipfsHash: string;

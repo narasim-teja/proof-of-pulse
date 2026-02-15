@@ -8,6 +8,7 @@ import {
   TrendingUp,
   CheckCircle2,
   XCircle,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +31,10 @@ interface AnalysisStepProps {
   loading: boolean;
   error: string | null;
   onSubmitToNear: () => void;
+  onRequestAsync: () => void;
   onBack: () => void;
+  walletConnected: boolean;
+  asyncLoading: boolean;
 }
 
 const activityLabel: Record<string, string> = {
@@ -45,7 +49,10 @@ export function AnalysisStep({
   loading,
   error,
   onSubmitToNear,
+  onRequestAsync,
   onBack,
+  walletConnected,
+  asyncLoading,
 }: AnalysisStepProps) {
   const { attestation, session_info, hr_timeline } = data;
   const a = attestation;
@@ -158,7 +165,7 @@ export function AnalysisStep({
       )}
 
       {/* Actions */}
-      <div className="flex gap-3 justify-center">
+      <div className="flex flex-wrap gap-3 justify-center">
         <Button variant="outline" onClick={onBack}>
           Back
         </Button>
@@ -166,7 +173,7 @@ export function AnalysisStep({
           className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[200px]"
           size="lg"
           onClick={onSubmitToNear}
-          disabled={loading}
+          disabled={loading || asyncLoading}
         >
           {loading ? (
             <>
@@ -175,6 +182,25 @@ export function AnalysisStep({
             </>
           ) : (
             "Submit to NEAR"
+          )}
+        </Button>
+        <Button
+          variant="outline"
+          className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+          onClick={onRequestAsync}
+          disabled={loading || asyncLoading || !walletConnected}
+          title={!walletConnected ? "Connect wallet to use async flow" : "Request async attestation via yield/resume"}
+        >
+          {asyncLoading ? (
+            <>
+              <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent inline-block" />
+              Requesting...
+            </>
+          ) : (
+            <>
+              <Zap className="mr-2 h-4 w-4" />
+              Async Attestation
+            </>
           )}
         </Button>
       </div>

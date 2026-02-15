@@ -3,7 +3,7 @@ import {
   extractWorkoutSession,
 } from "./parser/health-export-parser";
 import { analyzeWorkout } from "./engine/attestation-engine";
-import { submitAttestation, getAttestation } from "./oracle/submitter";
+import { submitAttestation, getAttestation, getReadOnlyProvider } from "./oracle/submitter";
 import {
   storeInNovaVault,
   grantAccess,
@@ -160,6 +160,63 @@ const server = Bun.serve({
           }
 
           return corsJson({ attestation });
+        } catch (err: any) {
+          return corsJson({ error: err.message }, 500);
+        }
+      },
+    },
+
+    "/api/agent-info": {
+      async GET() {
+        try {
+          const res = await fetch("http://localhost:3000/api/agent-info");
+          const data = await res.json();
+          return corsJson(data);
+        } catch (err: any) {
+          return corsJson({
+            name: "Proof of Pulse Oracle",
+            version: "1.0.0",
+            description: "Biometric attestation oracle (Shade Agent offline)",
+            capabilities: ["heart_rate_analysis", "workout_verification", "attestation_signing"],
+            contract: process.env.CONTRACT_ID || "proof-of-pulse.testnet",
+          });
+        }
+      },
+    },
+
+    "/api/oracles": {
+      async GET() {
+        try {
+          const provider = getReadOnlyProvider();
+          const result = await provider.callFunction<string>({
+            contractId: process.env.CONTRACT_ID!,
+            method: "get_oracles",
+            args: {},
+          });
+          const oracles = result ? JSON.parse(result) : [];
+          return corsJson({ oracles });
+        } catch (err: any) {
+          return corsJson({ oracles: [], error: err.message });
+        }
+      },
+    },
+
+    "/api/request-status/*": {
+      async GET(req) {
+        try {
+          const requestId = decodeURIComponent(
+            new URL(req.url).pathname.replace("/api/request-status/", "")
+          );
+          if (!requestId) {
+            return corsJson({ error: "Request ID is required" }, 400);
+          }
+          const provider = getReadOnlyProvider();
+          const result = await provider.callFunction<string>({
+            contractId: process.env.CONTRACT_ID!,
+            method: "get_request_status",
+            args: { request_id: requestId },
+          });
+          return corsJson(result ? JSON.parse(result) : null);
         } catch (err: any) {
           return corsJson({ error: err.message }, 500);
         }
