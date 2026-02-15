@@ -14,6 +14,8 @@ import agentInfo from "./routes/agentInfo.js";
 import analyze from "./routes/analyze.js";
 import attest from "./routes/attest.js";
 import pendingRequests from "./routes/pendingRequests.js";
+import contractViews from "./routes/contract-views.js";
+import vault from "./routes/vault.js";
 
 const app = new Hono();
 
@@ -31,6 +33,8 @@ app.route("/api/agent-info", agentInfo);
 app.route("/api/analyze", analyze);
 app.route("/api/attest", attest);
 app.route("/api/pending-requests", pendingRequests);
+app.route("/api", contractViews);
+app.route("/api/vault", vault);
 
 // Start the server
 const port = Number(process.env.PORT || "3000");

@@ -19,8 +19,10 @@ services:
       ATTESTATION_CONTRACT_ID: ${ATTESTATION_CONTRACT_ID}
       ORACLE_ACCOUNT_ID: ${ORACLE_ACCOUNT_ID}
       ORACLE_PRIVATE_KEY: ${ORACLE_PRIVATE_KEY}
+      NOVA_ACCOUNT_ID: ${NOVA_ACCOUNT_ID}
+      NOVA_API_KEY: ${NOVA_API_KEY}
     platform: linux/amd64
-    image: narasimteja/proof-of-pulse-agent@sha256:4efa58b1c38c8e4584d34e553df451c2a3be9d0e55e85d1bd0d14efb494ecde3
+    image: narasimteja/proof-of-pulse-agent@sha256:b11b9e096ddf5ca1c3386e5d76e19aeb9911ce4257663e29cb6da4aa987be051
     container_name: shade-agent-app
     ports:
       - 3000:3000

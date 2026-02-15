@@ -1,10 +1,11 @@
-import { describe, test, expect } from "bun:test";
-import { analyzeWorkout } from "../engine/attestation-engine";
+import { describe, test } from "node:test";
+import assert from "node:assert";
+import { analyzeWorkout } from "../engine/attestation-engine.js";
 import {
   parseHealthExport,
   extractWorkoutSession,
-} from "../parser/health-export-parser";
-import type { WorkoutSession, HRSample } from "../types";
+} from "../parser/health-export-parser.js";
+import type { WorkoutSession, HRSample } from "../types.js";
 
 // --- Mock data generators ---
 
@@ -50,7 +51,7 @@ function generateSpoofedFlat(): WorkoutSession {
   const baseTime = new Date("2026-02-14T14:00:00Z");
   const samples: HRSample[] = Array.from({ length: 100 }, (_, i) => ({
     timestamp: new Date(baseTime.getTime() + i * 18000),
-    bpm: 150 + (Math.random() * 0.5 - 0.25), // almost flat
+    bpm: 150 + (Math.random() * 0.5 - 0.25),
     source: "Fake",
   }));
 
@@ -70,21 +71,21 @@ describe("Attestation Engine", () => {
   test("analyzes real workout pattern correctly", () => {
     const result = analyzeWorkout(realWorkout);
 
-    expect(result.activity_type).toBe("high_intensity_cardio");
-    expect(result.duration_mins).toBe(25);
-    expect(result.avg_hr).toBeGreaterThan(120);
-    expect(result.max_hr).toBeGreaterThan(160);
-    expect(result.confidence).toBeGreaterThan(70);
-    expect(result.analysis.is_natural_pattern).toBe(true);
-    expect(result.analysis.has_warmup).toBe(true);
+    assert.strictEqual(result.activity_type, "high_intensity_cardio");
+    assert.strictEqual(result.duration_mins, 25);
+    assert.ok(result.avg_hr > 120, `avg_hr ${result.avg_hr} should be > 120`);
+    assert.ok(result.max_hr > 160, `max_hr ${result.max_hr} should be > 160`);
+    assert.ok(result.confidence > 60, `confidence ${result.confidence} should be > 60`);
+    assert.strictEqual(result.analysis.is_natural_pattern, true);
+    assert.strictEqual(result.analysis.has_warmup, true);
   });
 
   test("detects spoofed flat HR data", () => {
     const result = analyzeWorkout(generateSpoofedFlat());
 
-    expect(result.confidence).toBeLessThan(50);
-    expect(result.analysis.variability_score).toBeLessThan(20);
-    expect(result.analysis.has_warmup).toBe(false);
+    assert.ok(result.confidence < 50, `confidence ${result.confidence} should be < 50`);
+    assert.ok(result.analysis.variability_score < 20, `variability ${result.analysis.variability_score} should be < 20`);
+    assert.strictEqual(result.analysis.has_warmup, false);
   });
 
   test("confidence scales with duration", () => {
@@ -93,7 +94,8 @@ describe("Attestation Engine", () => {
 
     const shortResult = analyzeWorkout(short);
     const longResult = analyzeWorkout(long);
-    expect(longResult.confidence).toBeGreaterThan(shortResult.confidence);
+    assert.ok(longResult.confidence > shortResult.confidence,
+      `long confidence ${longResult.confidence} should be > short ${shortResult.confidence}`);
   });
 
   test("HR zone distribution sums to ~100%", () => {
@@ -105,12 +107,11 @@ describe("Attestation Engine", () => {
       zones.zone3_moderate +
       zones.zone4_vigorous +
       zones.zone5_max;
-    expect(sum).toBeGreaterThanOrEqual(95);
-    expect(sum).toBeLessThanOrEqual(105); // rounding tolerance
+    assert.ok(sum >= 95, `zone sum ${sum} should be >= 95`);
+    assert.ok(sum <= 105, `zone sum ${sum} should be <= 105`);
   });
 
   test("data hash is deterministic", () => {
-    // Use fixed samples (no randomness)
     const fixedSamples: HRSample[] = [
       { timestamp: new Date("2026-02-14T12:30:00Z"), bpm: 142, source: "AW" },
       { timestamp: new Date("2026-02-14T12:30:05Z"), bpm: 145, source: "AW" },
@@ -125,14 +126,13 @@ describe("Attestation Engine", () => {
 
     const r1 = analyzeWorkout(session);
     const r2 = analyzeWorkout(session);
-    expect(r1.data_hash).toBe(r2.data_hash);
-    expect(r1.data_hash.length).toBe(64); // SHA-256 hex = 64 chars
+    assert.strictEqual(r1.data_hash, r2.data_hash);
+    assert.strictEqual(r1.data_hash.length, 64);
   });
 
   test("recovery score is computed when peak is not at end", () => {
     const result = analyzeWorkout(realWorkout);
-    // Real workout has cooldown after peak — recovery score should be > 0
-    expect(result.recovery_score).toBeGreaterThan(0);
+    assert.ok(result.recovery_score > 0, `recovery_score ${result.recovery_score} should be > 0`);
   });
 });
 
@@ -146,10 +146,10 @@ describe("Health Export Parser", () => {
       </HealthData>
     `;
     const samples = parseHealthExport(xml);
-    expect(samples.length).toBe(2);
-    expect(samples[0].bpm).toBe(142);
-    expect(samples[1].bpm).toBe(145);
-    expect(samples[0].source).toBe("Apple Watch");
+    assert.strictEqual(samples.length, 2);
+    assert.strictEqual(samples[0].bpm, 142);
+    assert.strictEqual(samples[1].bpm, 145);
+    assert.strictEqual(samples[0].source, "Apple Watch");
   });
 
   test("returns empty array for no HR records", () => {
@@ -159,16 +159,15 @@ describe("Health Export Parser", () => {
       </HealthData>
     `;
     const samples = parseHealthExport(xml);
-    expect(samples.length).toBe(0);
+    assert.strictEqual(samples.length, 0);
   });
 
   test("returns empty array for empty XML", () => {
     const samples = parseHealthExport("<HealthData></HealthData>");
-    expect(samples.length).toBe(0);
+    assert.strictEqual(samples.length, 0);
   });
 
   test("extracts workout session from dense samples", () => {
-    // Generate 100 samples at 5s intervals, all > 100 bpm
     const samples: HRSample[] = Array.from({ length: 100 }, (_, i) => ({
       timestamp: new Date(`2026-02-14T12:${String(Math.floor(i * 5 / 60)).padStart(2, "0")}:${String((i * 5) % 60).padStart(2, "0")}Z`),
       bpm: 130 + Math.sin(i * 0.1) * 20,
@@ -176,9 +175,9 @@ describe("Health Export Parser", () => {
     }));
 
     const session = extractWorkoutSession(samples, "2026-02-14");
-    expect(session).not.toBeNull();
-    expect(session!.samples.length).toBeGreaterThanOrEqual(10);
-    expect(session!.durationMins).toBeGreaterThan(0);
+    assert.ok(session !== null, "session should not be null");
+    assert.ok(session!.samples.length >= 10, `sample count ${session!.samples.length} should be >= 10`);
+    assert.ok(session!.durationMins > 0, `duration ${session!.durationMins} should be > 0`);
   });
 
   test("returns null when no workout on date", () => {
@@ -186,7 +185,7 @@ describe("Health Export Parser", () => {
       { timestamp: new Date("2026-02-13T12:30:00Z"), bpm: 142, source: "AW" },
     ];
     const session = extractWorkoutSession(samples, "2026-02-14");
-    expect(session).toBeNull();
+    assert.strictEqual(session, null);
   });
 
   test("returns null for too few samples", () => {
@@ -196,6 +195,6 @@ describe("Health Export Parser", () => {
       source: "AW",
     }));
     const session = extractWorkoutSession(samples, "2026-02-14");
-    expect(session).toBeNull();
+    assert.strictEqual(session, null);
   });
 });

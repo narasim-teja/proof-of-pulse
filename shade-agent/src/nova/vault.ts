@@ -1,10 +1,11 @@
+import { createHash } from "node:crypto";
 import { NovaSdk, NovaError } from "nova-sdk-js";
 import type {
   HRSample,
   NovaVaultResult,
   NovaShareGrant,
   NovaVaultStatus,
-} from "../types";
+} from "../types.js";
 
 // --- Lazy-initialized SDK singleton ---
 
@@ -56,7 +57,6 @@ export async function ensureVault(
     return { groupId: `mock-${groupId}`, isNew: false };
   }
 
-  // Check if group already exists
   try {
     const owner = await sdk.getGroupOwner(groupId);
     if (owner) {
@@ -66,7 +66,6 @@ export async function ensureVault(
     // Group doesn't exist yet — will create
   }
 
-  // Create the group
   try {
     await sdk.registerGroup(groupId);
     console.log(`[NOVA] Created vault: ${groupId}`);
@@ -88,7 +87,7 @@ export async function uploadSessionData(
   sessionDate: string
 ): Promise<{ cid: string; fileHash: string; transactionId: string }> {
   const payload = JSON.stringify(
-    samples.map((s) => ({
+    samples.map((s: HRSample) => ({
       t: s.timestamp.toISOString(),
       bpm: s.bpm,
       src: s.source,
@@ -100,7 +99,7 @@ export async function uploadSessionData(
   const sdk = getSdk();
 
   if (!sdk || groupId.startsWith("mock-")) {
-    const hash = new Bun.CryptoHasher("sha256")
+    const hash = createHash("sha256")
       .update(dataBuffer)
       .digest("hex");
     return {
@@ -210,7 +209,7 @@ export async function getVaultStatus(
     owner,
     isAuthorized,
     fileCount: transactions.length,
-    files: transactions.map((tx) => ({
+    files: transactions.map((tx: any) => ({
       fileHash: tx.file_hash,
       ipfsHash: tx.ipfs_hash,
       userId: tx.user_id,

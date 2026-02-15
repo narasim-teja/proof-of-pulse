@@ -45,3 +45,27 @@ export interface AttestationResult {
   analysis: AttestationAnalysis;
   data_hash: string;
 }
+
+// --- NOVA Privacy Vault Types ---
+
+export interface NovaVaultResult {
+  groupId: string;
+  cid: string;
+  fileHash: string;
+  transactionId: string;
+  isNewVault: boolean;
+}
+
+export interface NovaShareGrant {
+  groupId: string;
+  memberId: string;
+  transactionId: string;
+}
+
+export interface NovaVaultStatus {
+  groupId: string;
+  owner: string | null;
+  isAuthorized: boolean;
+  fileCount: number;
+  files: Array<{ fileHash: string; ipfsHash: string; userId: string }>;
+}

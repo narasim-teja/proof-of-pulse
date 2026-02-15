@@ -20,7 +20,7 @@ function getOracleAccount(): Account {
   );
 }
 
-function getReadOnlyProvider(): JsonRpcProvider {
+export function getReadOnlyProvider(): JsonRpcProvider {
   return new JsonRpcProvider({ url: NEAR_RPC_URL });
 }
 

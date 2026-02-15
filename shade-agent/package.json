@@ -11,7 +11,8 @@
     "docker:build:no-cache": "docker build --no-cache --platform linux/amd64 -t proof-of-pulse-agent:latest .",
     "docker:push": "docker push proof-of-pulse-agent",
     "docker:prune": "docker system prune",
-    "phala:deploy": "phala cvms create --name proof-of-pulse-agent --vcpu 1 --compose ./docker-compose.yaml --env-file ./.env.development.local"
+    "phala:deploy": "phala cvms create --name proof-of-pulse-agent --vcpu 1 --compose ./docker-compose.yaml --env-file ./.env.development.local",
+    "test": "tsx --test src/test/*.test.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.15.0",
@@ -19,8 +20,10 @@
     "chainsig.js": "^1.1.11",
     "dotenv": "^16.5.0",
     "ethers": "^6.11.1",
+    "fast-xml-parser": "^5.3.6",
     "hono": "^4.8.4",
-    "near-api-js": "^7.1.1"
+    "near-api-js": "^7.1.1",
+    "nova-sdk-js": "^1.0.3"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
