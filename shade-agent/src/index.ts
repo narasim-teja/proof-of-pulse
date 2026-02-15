@@ -38,3 +38,27 @@ const port = Number(process.env.PORT || "3000");
 console.log(`Proof of Pulse Shade Agent running on http://localhost:${port}`);
 
 serve({ fetch: app.fetch, port });
+
+// ── Background polling for pending attestation requests ──
+import { getPendingRequests } from "./near/submitter.js";
+
+const POLL_INTERVAL_MS = 30_000; // 30 seconds
+
+async function pollPendingRequests() {
+  try {
+    const pending = await getPendingRequests();
+    if (pending.length > 0) {
+      console.log(
+        `[Shade Agent] Polling: ${pending.length} pending request(s)`,
+        pending.map((r) => r.request_id)
+      );
+    }
+  } catch (err) {
+    console.error("[Shade Agent] Poll error:", err);
+  }
+}
+
+setInterval(pollPendingRequests, POLL_INTERVAL_MS);
+console.log(
+  `[Shade Agent] Polling for pending requests every ${POLL_INTERVAL_MS / 1000}s`
+);
