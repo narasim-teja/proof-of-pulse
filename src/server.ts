@@ -4,6 +4,13 @@ import {
 } from "./parser/health-export-parser";
 import { analyzeWorkout } from "./engine/attestation-engine";
 import { submitAttestation, getAttestation } from "./oracle/submitter";
+import {
+  storeInNovaVault,
+  grantAccess,
+  revokeAccess,
+  getVaultStatus,
+} from "./nova/vault";
+import type { NovaVaultResult } from "./types";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -87,7 +94,15 @@ const server = Bun.serve({
           }
 
           const attestation = analyzeWorkout(session);
-          const novaVaultId = `nova_${Date.now()}`; // Phase 3 placeholder
+
+          // Store raw HR data in NOVA Privacy Vault
+          let novaResult: NovaVaultResult | null = null;
+          try {
+            novaResult = await storeInNovaVault(user_id, session.samples, date);
+          } catch (err: any) {
+            console.warn(`[NOVA] Storage failed: ${err.message}`);
+          }
+          const novaVaultId = novaResult?.groupId ?? `fallback_${Date.now()}`;
 
           const { txHash, key } = await submitAttestation(
             user_id,
@@ -100,6 +115,14 @@ const server = Bun.serve({
             near_tx: txHash,
             attestation_key: key,
             nova_vault_id: novaVaultId,
+            nova: novaResult
+              ? {
+                  cid: novaResult.cid,
+                  file_hash: novaResult.fileHash,
+                  nova_tx: novaResult.transactionId,
+                  is_new_vault: novaResult.isNewVault,
+                }
+              : null,
             explorer_url: `https://testnet.nearblocks.io/txns/${txHash}`,
           });
         } catch (err: any) {
@@ -126,6 +149,61 @@ const server = Bun.serve({
           }
 
           return corsJson({ attestation });
+        } catch (err: any) {
+          return corsJson({ error: err.message }, 500);
+        }
+      },
+    },
+
+    "/api/vault/grant": {
+      async POST(req) {
+        try {
+          const body = await req.json();
+          const { group_id, member_id } = body;
+          if (!group_id || !member_id) {
+            return corsJson(
+              { error: "group_id and member_id are required" },
+              400
+            );
+          }
+          const result = await grantAccess(group_id, member_id);
+          return corsJson({ grant: result });
+        } catch (err: any) {
+          return corsJson({ error: err.message }, 500);
+        }
+      },
+    },
+
+    "/api/vault/revoke": {
+      async POST(req) {
+        try {
+          const body = await req.json();
+          const { group_id, member_id } = body;
+          if (!group_id || !member_id) {
+            return corsJson(
+              { error: "group_id and member_id are required" },
+              400
+            );
+          }
+          const result = await revokeAccess(group_id, member_id);
+          return corsJson({ revoke: result });
+        } catch (err: any) {
+          return corsJson({ error: err.message }, 500);
+        }
+      },
+    },
+
+    "/api/vault/*": {
+      async GET(req) {
+        try {
+          const groupId = decodeURIComponent(
+            new URL(req.url).pathname.replace("/api/vault/", "")
+          );
+          if (!groupId) {
+            return corsJson({ error: "Group ID is required" }, 400);
+          }
+          const status = await getVaultStatus(groupId);
+          return corsJson({ vault: status });
         } catch (err: any) {
           return corsJson({ error: err.message }, 500);
         }

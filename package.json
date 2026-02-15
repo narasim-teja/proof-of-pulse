@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "fast-xml-parser": "^5.3.6",
-    "near-api-js": "^7.1.1"
+    "near-api-js": "^7.1.1",
+    "nova-sdk-js": "^1.0.3"
   }
 }
