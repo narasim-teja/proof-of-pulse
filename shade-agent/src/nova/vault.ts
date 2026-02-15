@@ -27,8 +27,6 @@ function getSdk(): NovaSdk | null {
 
   _sdk = new NovaSdk(accountId, {
     apiKey,
-    rpcUrl: "https://rpc.testnet.near.org",
-    contractId: "nova-sdk-6.testnet",
   });
 
   console.log(`[NOVA] SDK initialized for ${accountId}`);
