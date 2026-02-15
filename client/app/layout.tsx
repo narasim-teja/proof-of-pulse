@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { NearWalletProvider } from "@/components/wallet-provider";
 import "./globals.css";
@@ -32,6 +33,15 @@ export default function RootLayout({
       >
         <NearWalletProvider>
           <TooltipProvider>{children}</TooltipProvider>
+          <Toaster
+            position="top-right"
+            theme="dark"
+            richColors
+            toastOptions={{
+              duration: 4000,
+              className: "font-mono text-sm",
+            }}
+          />
         </NearWalletProvider>
       </body>
     </html>

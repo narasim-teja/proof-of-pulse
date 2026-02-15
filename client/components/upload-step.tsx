@@ -1,15 +1,6 @@
 "use client";
 
-import { Heart, Upload, FileText, Wallet } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Upload, FileText, Wallet } from "lucide-react";
 
 interface UploadStepProps {
   date: string;
@@ -51,130 +42,178 @@ export function UploadStep({
   };
 
   return (
-    <div className="flex justify-center px-4">
-      <Card className="w-full max-w-lg">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15">
-              <Heart className="h-7 w-7 text-emerald-500" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl">Proof of Pulse</CardTitle>
-          <CardDescription>
-            Generate a cryptographic proof of your workout from Apple Watch
-            heart rate data
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          {/* Data source toggle */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Data Source</label>
-            <div className="flex gap-2">
-              <Button
-                variant={useFilePath ? "default" : "outline"}
-                size="sm"
-                className="flex-1"
-                onClick={() => onToggleFilePath(true)}
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                Demo Data
-              </Button>
-              <Button
-                variant={!useFilePath ? "default" : "outline"}
-                size="sm"
-                className="flex-1"
-                onClick={() => onToggleFilePath(false)}
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                Upload XML
-              </Button>
-            </div>
-            {useFilePath && (
-              <p className="text-xs text-muted-foreground">
-                Using server-side data/export.xml
-              </p>
-            )}
-          </div>
+    <section className="px-6 sm:px-10 py-16 sm:py-20">
+      <div className="max-w-4xl mx-auto">
+        <div className="section-label mb-4">Upload</div>
 
-          {/* File upload (if not using demo data) */}
-          {!useFilePath && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Form */}
+          <div className="space-y-6">
+            <h2 className="font-mono text-xl sm:text-2xl font-bold tracking-tight">
+              GENERATE YOUR PROOF.
+            </h2>
+
+            {/* Data source toggle */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Apple Health Export (XML)
+              <label className="font-mono text-xs text-neutral-500 uppercase tracking-wider">
+                Data Source
               </label>
-              <Input
-                type="file"
-                accept=".xml"
-                onChange={handleFileChange}
-                className="cursor-pointer"
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onToggleFilePath(true)}
+                  className={`font-mono text-xs px-4 py-2 rounded-full flex items-center gap-2 transition-colors ${
+                    useFilePath
+                      ? "bg-white text-black"
+                      : "border border-neutral-700 text-neutral-400 hover:border-neutral-500"
+                  }`}
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  Demo Data
+                </button>
+                <button
+                  onClick={() => onToggleFilePath(false)}
+                  className={`font-mono text-xs px-4 py-2 rounded-full flex items-center gap-2 transition-colors ${
+                    !useFilePath
+                      ? "bg-white text-black"
+                      : "border border-neutral-700 text-neutral-400 hover:border-neutral-500"
+                  }`}
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  Upload XML
+                </button>
+              </div>
+              {useFilePath && (
+                <p className="font-mono text-xs text-neutral-600">
+                  Using server-side data/export.xml
+                </p>
+              )}
+            </div>
+
+            {/* File upload */}
+            {!useFilePath && (
+              <div className="space-y-2">
+                <label className="font-mono text-xs text-neutral-500 uppercase tracking-wider">
+                  Apple Health Export
+                </label>
+                <input
+                  type="file"
+                  accept=".xml"
+                  onChange={handleFileChange}
+                  className="block w-full font-mono text-xs text-neutral-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border file:border-neutral-700 file:text-xs file:font-mono file:bg-transparent file:text-neutral-300 hover:file:border-neutral-500 cursor-pointer"
+                />
+              </div>
+            )}
+
+            {/* Date */}
+            <div className="space-y-2">
+              <label className="font-mono text-xs text-neutral-500 uppercase tracking-wider">
+                Workout Date
+              </label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => onDateChange(e.target.value)}
+                className="block w-full bg-neutral-900 border border-neutral-800 rounded-lg px-4 py-2.5 font-mono text-sm text-neutral-300 focus:outline-none focus:border-neutral-600 transition-colors"
               />
             </div>
-          )}
 
-          {/* Date picker */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Workout Date</label>
-            <Input
-              type="date"
-              value={date}
-              onChange={(e) => onDateChange(e.target.value)}
-            />
+            {/* User ID */}
+            <div className="space-y-2">
+              <label className="font-mono text-xs text-neutral-500 uppercase tracking-wider">
+                NEAR Account
+              </label>
+              {walletConnected ? (
+                <div className="flex items-center gap-2 bg-neutral-900 border border-neutral-800 rounded-lg px-4 py-2.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  <span className="font-mono text-sm text-neutral-300 truncate">
+                    {userId}
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={userId}
+                    onChange={(e) => onUserIdChange(e.target.value)}
+                    placeholder="your-account.testnet"
+                    className="block w-full bg-neutral-900 border border-neutral-800 rounded-lg px-4 py-2.5 font-mono text-sm text-neutral-300 placeholder:text-neutral-700 focus:outline-none focus:border-neutral-600 transition-colors"
+                  />
+                  <button
+                    onClick={onConnectWallet}
+                    className="w-full font-mono text-xs text-neutral-400 border border-neutral-800 px-4 py-2 rounded-full hover:border-neutral-600 hover:text-white transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Wallet className="h-3.5 w-3.5" />
+                    Connect Wallet Instead
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Error */}
+            {error && (
+              <p className="font-mono text-xs text-red-400">{error}</p>
+            )}
+
+            {/* Submit */}
+            <button
+              onClick={onAnalyze}
+              disabled={loading}
+              className="w-full font-mono text-sm bg-white text-black px-6 py-3 rounded-full hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? "Analyzing heart rate data..." : "Generate Proof"}
+            </button>
           </div>
 
-          {/* User ID */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">NEAR Account ID</label>
-            {walletConnected ? (
-              <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-md px-3 py-2">
-                <Wallet className="h-4 w-4 text-emerald-500 shrink-0" />
-                <span className="text-sm font-mono text-emerald-400 truncate">
-                  {userId}
-                </span>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Input
-                  type="text"
-                  value={userId}
-                  onChange={(e) => onUserIdChange(e.target.value)}
-                  placeholder="your-account.testnet"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={onConnectWallet}
-                >
-                  <Wallet className="mr-2 h-4 w-4" />
-                  Connect Wallet Instead
-                </Button>
-              </div>
-            )}
+          {/* Info panel */}
+          <div className="hidden lg:block">
+            <div className="section-label mb-4">What Happens</div>
+            <div className="space-y-6">
+              <InfoItem
+                num="01"
+                title="Parse"
+                desc="Heart rate samples are extracted from your Apple Health XML export."
+              />
+              <InfoItem
+                num="02"
+                title="Detect"
+                desc="The engine checks for fraud: flat data, erratic swings, missing warmup patterns."
+              />
+              <InfoItem
+                num="03"
+                title="Score"
+                desc="A confidence score (0-100) is computed from duration, variability, sampling density, and HR range."
+              />
+              <InfoItem
+                num="04"
+                title="Prove"
+                desc="The attestation is signed and submitted to the NEAR blockchain. Raw data stays encrypted in NOVA."
+              />
+            </div>
           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
-          {/* Error */}
-          {error && (
-            <p className="text-sm text-destructive font-medium">{error}</p>
-          )}
-
-          {/* Submit */}
-          <Button
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-            size="lg"
-            onClick={onAnalyze}
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent inline-block" />
-                Analyzing...
-              </>
-            ) : (
-              "Generate Proof"
-            )}
-          </Button>
-        </CardContent>
-      </Card>
+function InfoItem({
+  num,
+  title,
+  desc,
+}: {
+  num: string;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <div className="flex gap-4">
+      <span className="font-mono text-xs text-neutral-700 pt-0.5">{num}</span>
+      <div>
+        <h4 className="font-mono text-sm font-semibold text-neutral-300 mb-1">
+          {title}
+        </h4>
+        <p className="text-xs text-neutral-600 leading-relaxed">{desc}</p>
+      </div>
     </div>
   );
 }

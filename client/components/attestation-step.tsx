@@ -2,28 +2,18 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useWalletSelector } from "@near-wallet-selector/react-hook";
+import { toast } from "sonner";
 import {
-  CheckCircle2,
   ExternalLink,
   Copy,
-  Shield,
   ShieldCheck,
   ChevronDown,
   ChevronUp,
   Coins,
   Loader2,
   XCircle,
+  CheckCircle2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import type { AttestResponse, AgentInfo, OracleEntry } from "@/lib/types";
 import * as api from "@/lib/api";
 
@@ -58,6 +48,7 @@ export function AttestationStep({
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
+    toast("Copied to clipboard");
   };
 
   const handleClaimReward = useCallback(async () => {
@@ -66,292 +57,282 @@ export function AttestationStep({
     try {
       await callFunction({
         contractId: CONSUMER_CONTRACT_ID,
-        methodName: "claim_reward",
+        method: "claim_reward",
         args: { attestation_key: data.attestation_key },
         gas: "60000000000000",
         deposit: "0",
       });
       setClaimState("success");
+      toast.success("10 SWEAT rewarded!", {
+        description: "Cross-contract verification passed",
+      });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Claim failed";
       if (message.includes("rejected") || message.includes("Confidence")) {
         setClaimState("rejected");
+        toast.error("Reward rejected", {
+          description: "Confidence below 80%",
+        });
       } else {
         setClaimState("error");
+        toast.error("Claim failed", { description: message });
       }
       setClaimError(message);
     }
   }, [callFunction, data.attestation_key]);
 
   return (
-    <div className="flex justify-center px-4">
-      <Card className="w-full max-w-lg">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 animate-pulse">
-              <CheckCircle2 className="h-8 w-8 text-emerald-500" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl">Attestation Generated!</CardTitle>
-          <CardDescription>
-            Your workout proof has been submitted to the NEAR blockchain
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* NEAR Transaction */}
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground font-medium">
-              NEAR Transaction
-            </label>
-            <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
-              <span className="text-sm font-mono truncate flex-1">
-                {data.near_tx}
-              </span>
-              <button
-                onClick={() => copyToClipboard(data.near_tx)}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <Copy className="h-4 w-4" />
-              </button>
-              <a
-                href={data.explorer_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-emerald-500 hover:text-emerald-400"
-              >
-                <ExternalLink className="h-4 w-4" />
-              </a>
-            </div>
+    <section className="px-6 sm:px-10 py-16 sm:py-20">
+      <div className="max-w-4xl mx-auto">
+        <div className="section-label mb-4">On-Chain Proof</div>
+
+        {/* Terminal-style TX block */}
+        <div className="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden mb-8">
+          {/* Terminal header */}
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-neutral-800">
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+            <span className="h-2.5 w-2.5 rounded-full bg-neutral-600" />
+            <span className="font-mono text-[10px] text-neutral-600 ml-2">
+              near-transaction
+            </span>
           </div>
 
-          {/* Attestation Key */}
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground font-medium">
-              Attestation Key
-            </label>
-            <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
-              <span className="text-sm font-mono truncate flex-1">
-                {data.attestation_key}
-              </span>
-              <button
-                onClick={() => copyToClipboard(data.attestation_key)}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <Copy className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Summary badges */}
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary">
-              <Shield className="mr-1 h-3 w-3" />
-              Confidence: {data.attestation.confidence}/100
-            </Badge>
-            <Badge variant="secondary">
-              {data.attestation.activity_type.replace(/_/g, " ")}
-            </Badge>
-            <Badge variant="secondary">
-              {data.attestation.duration_mins} min
-            </Badge>
-            <Badge variant="outline" className="text-cyan-400 border-cyan-400/30">
-              <ShieldCheck className="mr-1 h-3 w-3" />
-              TEE Verified
-            </Badge>
-          </div>
-
-          <Separator />
-
-          {/* NOVA Vault Info */}
-          <div className="space-y-2">
-            <label className="text-xs text-muted-foreground font-medium">
-              NOVA Privacy Vault
-            </label>
-            <div className="bg-muted rounded-lg px-3 py-2 space-y-1">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Vault ID</span>
-                <span className="font-mono text-xs">{data.nova_vault_id}</span>
+          <div className="p-5 space-y-4">
+            {/* NEAR TX */}
+            <div className="space-y-1">
+              <div className="font-mono text-[10px] text-neutral-600 uppercase tracking-wider">
+                Transaction Hash
               </div>
-              {data.nova && (
-                <>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">IPFS CID</span>
-                    <span className="font-mono text-xs truncate max-w-[180px]">
-                      {data.nova.cid}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Data Hash</span>
-                    <span className="font-mono text-xs truncate max-w-[180px]">
-                      {data.attestation.data_hash.slice(0, 16)}...
-                    </span>
-                  </div>
-                  {data.nova.is_new_vault && (
-                    <Badge
-                      variant="outline"
-                      className="text-emerald-500 border-emerald-500/30 text-xs"
-                    >
-                      New Vault Created
-                    </Badge>
-                  )}
-                </>
-              )}
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-sm text-neutral-300 truncate flex-1">
+                  {data.near_tx}
+                </span>
+                <button
+                  onClick={() => copyToClipboard(data.near_tx)}
+                  className="text-neutral-600 hover:text-neutral-300 transition-colors"
+                  title="Copy"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+                <a
+                  href={data.explorer_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-neutral-600 hover:text-neutral-300 transition-colors"
+                  title="View on Explorer"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </div>
+            </div>
+
+            {/* Attestation Key */}
+            <div className="space-y-1">
+              <div className="font-mono text-[10px] text-neutral-600 uppercase tracking-wider">
+                Attestation Key
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-sm text-neutral-300 truncate flex-1">
+                  {data.attestation_key}
+                </span>
+                <button
+                  onClick={() => copyToClipboard(data.attestation_key)}
+                  className="text-neutral-600 hover:text-neutral-300 transition-colors"
+                  title="Copy"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
           </div>
+        </div>
 
-          <Separator />
+        {/* Summary row */}
+        <div className="flex flex-wrap gap-3 mb-8 font-mono text-xs">
+          <span className="border border-neutral-800 px-3 py-1.5 rounded text-neutral-400">
+            Confidence: {data.attestation.confidence}/100
+          </span>
+          <span className="border border-neutral-800 px-3 py-1.5 rounded text-neutral-400">
+            {data.attestation.activity_type.replace(/_/g, " ")}
+          </span>
+          <span className="border border-neutral-800 px-3 py-1.5 rounded text-neutral-400">
+            {data.attestation.duration_mins} min
+          </span>
+          <span className="border border-cyan-900/50 px-3 py-1.5 rounded text-cyan-400 flex items-center gap-1.5">
+            <ShieldCheck className="h-3 w-3" />
+            TEE Verified
+          </span>
+        </div>
 
-          {/* Oracle Info (collapsible) */}
-          <div className="space-y-2">
-            <button
-              className="flex items-center gap-1 text-xs text-muted-foreground font-medium hover:text-foreground transition-colors w-full"
-              onClick={() => setOracleOpen((o) => !o)}
-            >
-              <ShieldCheck className="h-3 w-3 text-cyan-400" />
-              Oracle Info
-              {oracleOpen ? (
-                <ChevronUp className="h-3 w-3 ml-auto" />
-              ) : (
-                <ChevronDown className="h-3 w-3 ml-auto" />
-              )}
-            </button>
-            {oracleOpen && (
-              <div className="bg-muted rounded-lg px-3 py-2 space-y-2 text-sm">
-                {agentInfo && (
-                  <>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Oracle</span>
-                      <span>
-                        {agentInfo.name}{" "}
-                        <Badge variant="outline" className="text-xs ml-1">
-                          v{agentInfo.version}
-                        </Badge>
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Runtime</span>
-                      <span className="font-mono text-xs">shade-agent-tee</span>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-muted-foreground text-xs">
-                        Capabilities
-                      </span>
-                      <div className="flex flex-wrap gap-1">
-                        {agentInfo.capabilities.map((c) => (
-                          <Badge
-                            key={c}
-                            variant="secondary"
-                            className="text-xs"
-                          >
-                            {c.replace(/_/g, " ")}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-                {oracles.length > 0 && (
-                  <div className="space-y-1 pt-1">
-                    <span className="text-muted-foreground text-xs">
-                      Authorized Oracles
-                    </span>
-                    {oracles.map((o) => (
-                      <div
-                        key={o.oracle_id}
-                        className="flex justify-between text-xs"
-                      >
-                        <span className="font-mono truncate max-w-[200px]">
-                          {o.oracle_id}
-                        </span>
-                        <Badge variant="outline" className="text-xs">
-                          v{o.version}
-                        </Badge>
-                      </div>
-                    ))}
+        {/* NOVA Vault Info */}
+        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-5 mb-6">
+          <div className="font-mono text-xs text-neutral-500 uppercase tracking-wider mb-3">
+            NOVA Privacy Vault
+          </div>
+          <div className="space-y-2 font-mono text-xs">
+            <div className="flex justify-between">
+              <span className="text-neutral-600">Vault ID</span>
+              <span className="text-neutral-400">{data.nova_vault_id}</span>
+            </div>
+            {data.nova && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-neutral-600">IPFS CID</span>
+                  <span className="text-neutral-400 truncate max-w-[200px]">
+                    {data.nova.cid}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-neutral-600">Data Hash</span>
+                  <span className="text-neutral-400 truncate max-w-[200px]">
+                    {data.attestation.data_hash.slice(0, 16)}...
+                  </span>
+                </div>
+                {data.nova.is_new_vault && (
+                  <div className="flex items-center gap-1.5 text-emerald-500 pt-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    New vault created
                   </div>
                 )}
-              </div>
+              </>
             )}
           </div>
+        </div>
 
-          <Separator />
-
-          {/* Claim SWEAT Reward */}
-          <div className="space-y-2">
-            <label className="text-xs text-muted-foreground font-medium">
-              Cross-Contract Composability
-            </label>
-            <div className="bg-muted rounded-lg px-3 py-3 space-y-3">
-              <p className="text-xs text-muted-foreground">
-                Any dApp on NEAR can verify your attestation. Try claiming a mock
-                Sweatcoin reward (requires confidence {">="} 80).
-              </p>
-              {claimState === "idle" && (
-                <Button
-                  size="sm"
-                  className="w-full bg-amber-600 hover:bg-amber-700 text-white"
-                  onClick={handleClaimReward}
-                  disabled={!walletConnected}
-                >
-                  <Coins className="mr-2 h-4 w-4" />
-                  {walletConnected
-                    ? "Claim 10 SWEAT"
-                    : "Connect Wallet to Claim"}
-                </Button>
-              )}
-              {claimState === "loading" && (
-                <Button size="sm" className="w-full" disabled>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Claiming...
-                </Button>
-              )}
-              {claimState === "success" && (
-                <div className="flex items-center gap-2 text-sm text-emerald-400">
-                  <CheckCircle2 className="h-4 w-4" />
-                  10 SWEAT rewarded! Cross-contract verification passed.
-                </div>
-              )}
-              {claimState === "rejected" && (
-                <div className="flex items-center gap-2 text-sm text-amber-400">
-                  <XCircle className="h-4 w-4" />
-                  Reward rejected: confidence below 80%
-                </div>
-              )}
-              {claimState === "error" && (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-sm text-destructive">
-                    <XCircle className="h-4 w-4" />
-                    Claim failed
+        {/* Oracle Info (collapsible) */}
+        <div className="bg-neutral-900 border border-neutral-800 rounded-lg mb-6">
+          <button
+            className="flex items-center gap-2 w-full px-5 py-3 font-mono text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+            onClick={() => setOracleOpen((o) => !o)}
+          >
+            <ShieldCheck className="h-3 w-3 text-cyan-500" />
+            <span className="uppercase tracking-wider">Oracle Info</span>
+            {oracleOpen ? (
+              <ChevronUp className="h-3 w-3 ml-auto" />
+            ) : (
+              <ChevronDown className="h-3 w-3 ml-auto" />
+            )}
+          </button>
+          {oracleOpen && (
+            <div className="border-t border-neutral-800 px-5 py-4 space-y-3 font-mono text-xs">
+              {agentInfo && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-600">Oracle</span>
+                    <span className="text-neutral-400">
+                      {agentInfo.name}{" "}
+                      <span className="text-neutral-700">v{agentInfo.version}</span>
+                    </span>
                   </div>
-                  {claimError && (
-                    <p className="text-xs text-muted-foreground">{claimError}</p>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setClaimState("idle")}
-                  >
-                    Try Again
-                  </Button>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-600">Runtime</span>
+                    <span className="text-neutral-400">shade-agent-tee</span>
+                  </div>
+                  <div className="space-y-1.5">
+                    <span className="text-neutral-600">Capabilities</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {agentInfo.capabilities.map((c) => (
+                        <span
+                          key={c}
+                          className="border border-neutral-800 px-2 py-0.5 rounded text-neutral-500"
+                        >
+                          {c.replace(/_/g, " ")}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+              {oracles.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-neutral-600">Authorized Oracles</span>
+                  {oracles.map((o) => (
+                    <div key={o.oracle_id} className="flex justify-between">
+                      <span className="text-neutral-400 truncate max-w-[220px]">
+                        {o.oracle_id}
+                      </span>
+                      <span className="text-neutral-700">v{o.version}</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1" onClick={onReset}>
-              Start Over
-            </Button>
-            <Button
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-              onClick={onViewVault}
-            >
-              View Vault
-            </Button>
+        {/* Claim SWEAT Reward */}
+        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-5 mb-8">
+          <div className="font-mono text-xs text-neutral-500 uppercase tracking-wider mb-3">
+            Cross-Contract Composability
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          <p className="font-mono text-xs text-neutral-600 mb-4">
+            Any dApp on NEAR can verify your attestation. Try claiming a mock
+            Sweatcoin reward (requires confidence {">="} 80).
+          </p>
+          {claimState === "idle" && (
+            <button
+              onClick={handleClaimReward}
+              disabled={!walletConnected}
+              className="font-mono text-xs bg-amber-600 text-white px-5 py-2 rounded-full hover:bg-amber-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <Coins className="h-3.5 w-3.5" />
+              {walletConnected ? "Claim 10 SWEAT" : "Connect Wallet to Claim"}
+            </button>
+          )}
+          {claimState === "loading" && (
+            <div className="flex items-center gap-2 font-mono text-xs text-neutral-400">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Claiming...
+            </div>
+          )}
+          {claimState === "success" && (
+            <div className="flex items-center gap-2 font-mono text-xs text-emerald-500">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              10 SWEAT rewarded! Cross-contract verification passed.
+            </div>
+          )}
+          {claimState === "rejected" && (
+            <div className="flex items-center gap-2 font-mono text-xs text-amber-400">
+              <XCircle className="h-3.5 w-3.5" />
+              Reward rejected: confidence below 80%
+            </div>
+          )}
+          {claimState === "error" && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 font-mono text-xs text-red-400">
+                <XCircle className="h-3.5 w-3.5" />
+                Claim failed
+              </div>
+              {claimError && (
+                <p className="font-mono text-xs text-neutral-600">{claimError}</p>
+              )}
+              <button
+                onClick={() => setClaimState("idle")}
+                className="font-mono text-xs text-neutral-400 border border-neutral-800 px-4 py-1.5 rounded-full hover:border-neutral-600 hover:text-white transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={onReset}
+            className="font-mono text-xs text-neutral-400 border border-neutral-800 px-5 py-2.5 rounded-full hover:border-neutral-600 hover:text-white transition-colors"
+          >
+            Start Over
+          </button>
+          <button
+            onClick={onViewVault}
+            className="font-mono text-sm bg-white text-black px-6 py-2.5 rounded-full hover:bg-neutral-200 transition-colors"
+          >
+            View Vault
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }
