@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { getPendingRequests } from "../near/submitter";
+import { getPendingRequests } from "../near/submitter.js";
 
 const app = new Hono();
 

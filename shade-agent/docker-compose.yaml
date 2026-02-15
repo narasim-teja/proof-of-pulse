@@ -1,5 +1,4 @@
 services:
-  # always have shade-agent-api first in order of services
   shade-agent-api:
     environment:
       NEAR_ACCOUNT_ID: ${NEAR_ACCOUNT_ID}
@@ -8,11 +7,9 @@ services:
       APP_CODEHASH: ${APP_CODEHASH}
       NEXT_PUBLIC_contractId: ${NEXT_PUBLIC_contractId}
       NEAR_RPC_JSON: ${NEAR_RPC_JSON}
-    platform: linux/amd64 # Explicitly set for TDX
-    # shade-agent-api-image
+    platform: linux/amd64
     image: mattdlockyer/shade-agent-api@sha256:a86e3a4300b069c08d629a38d61a3d780f7992eaf36aa505e4527e466553e2e5
     container_name: shade-agent-api
-    # DO NOT EXPOSE THE API PORT TO THE PUBLIC
     volumes:
       - /var/run/tappd.sock:/var/run/tappd.sock
     restart: always
@@ -22,12 +19,11 @@ services:
       ATTESTATION_CONTRACT_ID: ${ATTESTATION_CONTRACT_ID}
       ORACLE_ACCOUNT_ID: ${ORACLE_ACCOUNT_ID}
       ORACLE_PRIVATE_KEY: ${ORACLE_PRIVATE_KEY}
-    platform: linux/amd64 # Explicitly set for TDX
-    # shade-agent-app-image — update after docker:build + docker:push
-    image: ${DOCKER_TAG}:latest
+    platform: linux/amd64
+    image: narasimteja/proof-of-pulse-agent@sha256:860ae5ffbfe23196c0f4704f2cc651e3f73315292c324e6f5003ee62929895c6
     container_name: shade-agent-app
     ports:
-      - "3000:3000"
+      - 3000:3000
     volumes:
       - /var/run/tappd.sock:/var/run/tappd.sock
     restart: always

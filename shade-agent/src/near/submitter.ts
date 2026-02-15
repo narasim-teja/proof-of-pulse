@@ -4,7 +4,7 @@ import {
   KeyPairSigner,
   getTransactionLastResult,
 } from "near-api-js";
-import type { AttestationResult } from "../types";
+import type { AttestationResult } from "../types.js";
 
 const NEAR_RPC_URL = "https://rpc.testnet.near.org";
 

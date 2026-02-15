@@ -1,7 +1,7 @@
 import { Hono } from "hono";
-import { analyzeWorkout } from "../engine/attestation-engine";
-import { submitAttestation } from "../near/submitter";
-import type { HRSampleInput, WorkoutSession } from "../types";
+import { analyzeWorkout } from "../engine/attestation-engine.js";
+import { submitAttestation } from "../near/submitter.js";
+import type { HRSampleInput, WorkoutSession } from "../types.js";
 
 const app = new Hono();
 

@@ -3,7 +3,7 @@ import type {
   WorkoutSession,
   AttestationResult,
   HRZoneDistribution,
-} from "../types";
+} from "../types.js";
 
 /**
  * Analyze a workout session and produce a biometric attestation.
@@ -11,10 +11,10 @@ import type {
  */
 export function analyzeWorkout(session: WorkoutSession): AttestationResult {
   const { samples, durationMins } = session;
-  const bpms = samples.map((s) => s.bpm);
+  const bpms = samples.map((s: { bpm: number }) => s.bpm);
 
   // ---- Basic Stats ----
-  const avg_hr = Math.round(bpms.reduce((a, b) => a + b, 0) / bpms.length);
+  const avg_hr = Math.round(bpms.reduce((a: number, b: number) => a + b, 0) / bpms.length);
   const max_hr = Math.max(...bpms);
   const min_hr = Math.min(...bpms);
 
@@ -113,7 +113,7 @@ export function analyzeWorkout(session: WorkoutSession): AttestationResult {
 
   // ---- Data Hash (SHA-256) ----
   const dataString = samples
-    .map((s) => `${s.timestamp.toISOString()}:${s.bpm}`)
+    .map((s: { timestamp: Date; bpm: number }) => `${s.timestamp.toISOString()}:${s.bpm}`)
     .join(",");
   const data_hash = createHash("sha256").update(dataString).digest("hex");
 

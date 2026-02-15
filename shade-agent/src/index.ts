@@ -9,11 +9,11 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 // Import routes
-import agentAccount from "./routes/agentAccount";
-import agentInfo from "./routes/agentInfo";
-import analyze from "./routes/analyze";
-import attest from "./routes/attest";
-import pendingRequests from "./routes/pendingRequests";
+import agentAccount from "./routes/agentAccount.js";
+import agentInfo from "./routes/agentInfo.js";
+import analyze from "./routes/analyze.js";
+import attest from "./routes/attest.js";
+import pendingRequests from "./routes/pendingRequests.js";
 
 const app = new Hono();
 
