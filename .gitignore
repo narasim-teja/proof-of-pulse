@@ -6,6 +6,7 @@ out
 dist
 *.tgz
 contract/build/
+consumer-contract/build/
 
 # code coverage
 coverage
